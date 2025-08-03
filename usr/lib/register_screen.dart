@@ -32,7 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         data: {'username': _usernameController.text},
       );
       if (mounted) {
-        context.showErrorSnackBar(message: 'Check your email for a confirmation link.');
+        context.showSnackBar(message: 'Check your email for a confirmation link.');
         Navigator.of(context).pop();
       }
     } catch (error) {
