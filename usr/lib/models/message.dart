@@ -1,25 +1,22 @@
-import 'package:couldai_user_app/models/profile.dart';
-
 class Message {
   final String id;
   final String profileId;
   final String content;
   final DateTime createdAt;
-  final Profile? profile;
+  final bool isMyMessage;
 
   Message({
     required this.id,
     required this.profileId,
     required this.content,
     required this.createdAt,
-    this.profile,
+    required this.isMyMessage,
   });
 
-  Message.fromMap({required Map<String, dynamic> map})
-      : id = map['id'],
+  Message.fromMap({required Map<String, dynamic> map, required String myUserId})
+      : id = map['id'].toString(),
         profileId = map['profile_id'],
         content = map['content'],
         createdAt = DateTime.parse(map['created_at']),
-        profile =
-            map['profiles'] != null ? Profile.fromMap(map['profiles']) : null;
+        isMyMessage = myUserId == map['profile_id'];
 }

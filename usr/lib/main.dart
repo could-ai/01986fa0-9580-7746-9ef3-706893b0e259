@@ -1,5 +1,8 @@
 import 'package:couldai_user_app/chat_screen.dart';
 import 'package:couldai_user_app/integrations/supabase.dart';
+import 'package:couldai_user_app/login_screen.dart';
+import 'package:couldai_user_app/register_screen.dart';
+import 'package:couldai_user_app/splash_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -26,7 +29,13 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const ChatScreen(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/login': (context) => const LoginScreen(),
+        '/register': (context) => const RegisterScreen(),
+        '/chat': (context) => const ChatScreen(),
+      },
     );
   }
 }

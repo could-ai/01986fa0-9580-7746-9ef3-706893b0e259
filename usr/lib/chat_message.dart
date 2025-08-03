@@ -1,4 +1,3 @@
-import 'package:couldai_user_app/constants.dart';
 import 'package:couldai_user_app/models/message.dart';
 import 'package:flutter/material.dart';
 
@@ -6,13 +5,15 @@ class ChatMessage extends StatelessWidget {
   const ChatMessage({
     super.key,
     required this.message,
+    required this.username,
   });
 
   final Message message;
+  final String? username;
 
   @override
   Widget build(BuildContext context) {
-    final isMyMessage = message.profileId == supabase.auth.currentUser!.id;
+    final isMyMessage = message.isMyMessage;
 
     return Align(
       alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
@@ -27,7 +28,7 @@ class ChatMessage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                message.profile?.username ?? 'A user',
+                username ?? 'Loading...',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
