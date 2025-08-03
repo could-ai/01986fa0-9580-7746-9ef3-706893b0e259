@@ -70,6 +70,7 @@ class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blue,
       appBar: AppBar(
         title: const Text('Chat App'),
         elevation: Theme.of(context).platform == TargetPlatform.iOS ? 0.0 : 4.0,
