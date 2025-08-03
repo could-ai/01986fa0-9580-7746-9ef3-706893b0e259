@@ -21,7 +21,7 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _messagesStream = supabase
         .from('messages')
-        .select<List<Map<String, dynamic>>>('*, profiles ( username )')
+        .select('*, profiles ( username )')
         .order('created_at')
         .stream(primaryKey: ['id']).map((data) => data
             .map((map) => Message.fromMap(map: map))
