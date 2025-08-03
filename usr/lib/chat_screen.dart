@@ -21,10 +21,13 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
     _messagesStream = supabase
         .from('messages')
-        .stream(primaryKey: ['id'])
         .select<List<Map<String, dynamic>>>('*, profiles ( username )')
         .order('created_at')
-        .map((data) => data.map((map) => Message.fromMap(map: map)).toList().reversed.toList());
+        .stream(primaryKey: ['id']).map((data) => data
+            .map((map) => Message.fromMap(map: map))
+            .toList()
+            .reversed
+            .toList());
   }
 
   @override
