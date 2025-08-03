@@ -19,15 +19,18 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    // The root of the error is that you cannot use .select() with joins on a real-time .stream().
+    // The .stream() method returns a special builder that supports filtering (eq, gt) and ordering (order),
+    // but not the kind of column selection and table joining that .select() provides.
+    //
+    // To fix this, we must remove the .select() call. We will fetch the messages first,
+    // and in a future step, we will implement a separate mechanism to get the usernames.
     _messagesStream = supabase
         .from('messages')
-        .select('*, profiles ( username )')
+        .stream(primaryKey: ['id'])
         .order('created_at')
-        .stream(primaryKey: ['id']).map((data) => data
-            .map((map) => Message.fromMap(map: map))
-            .toList()
-            .reversed
-            .toList());
+        .map((data) =>
+            data.map((map) => Message.fromMap(map: map)).toList().reversed.toList());
   }
 
   @override
@@ -83,6 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (snapshot.hasData) {
                   final messages = snapshot.data!;
                   return ListView.builder(
+                    reverse: true,
                     padding: const EdgeInsets.symmetric(
                         vertical: 8.0, horizontal: 8.0),
                     itemCount: messages.length,
