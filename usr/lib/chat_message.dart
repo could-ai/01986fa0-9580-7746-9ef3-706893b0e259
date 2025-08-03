@@ -1,40 +1,52 @@
+import 'package:couldai_user_app/constants.dart';
+import 'package:couldai_user_app/models/message.dart';
 import 'package:flutter/material.dart';
 
 class ChatMessage extends StatelessWidget {
-  const ChatMessage(
-      {required this.text, required this.animationController, super.key});
-  final String text;
-  final AnimationController animationController;
+  const ChatMessage({
+    super.key,
+    required this.message,
+  });
+
+  final Message message;
 
   @override
   Widget build(BuildContext context) {
-    const String sender = 'You';
-    return SizeTransition(
-      sizeFactor:
-          CurvedAnimation(parent: animationController, curve: Curves.easeOut),
-      axisAlignment: 0.0,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 10.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(right: 16.0),
-              child: const CircleAvatar(child: Text(sender)),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(sender, style: Theme.of(context).textTheme.titleMedium),
-                  Container(
-                    margin: const EdgeInsets.only(top: 5.0),
-                    child: Text(text),
-                  ),
-                ],
+    final isMyMessage = message.profileId == supabase.auth.currentUser!.id;
+
+    return Align(
+      alignment: isMyMessage ? Alignment.centerRight : Alignment.centerLeft,
+      child: Card(
+        color: isMyMessage
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.surfaceVariant,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message.profile?.username ?? 'A user',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isMyMessage
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                message.content,
+                style: TextStyle(
+                  color: isMyMessage
+                      ? Colors.white
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

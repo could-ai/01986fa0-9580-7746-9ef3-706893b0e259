@@ -1,4 +1,8 @@
+import 'dart:async';
+
 import 'package:couldai_user_app/chat_message.dart';
+import 'package:couldai_user_app/constants.dart';
+import 'package:couldai_user_app/models/message.dart';
 import 'package:flutter/material.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -8,87 +12,123 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> with TickerProviderStateMixin {
-  final List<ChatMessage> _messages = [];
+class _ChatScreenState extends State<ChatScreen> {
+  late final Stream<List<Message>> _messagesStream;
   final _textController = TextEditingController();
-  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _messagesStream = supabase
+        .from('messages')
+        .stream(primaryKey: ['id'])
+        .select<List<Map<String, dynamic>>>('*, profiles ( username )')
+        .order('created_at')
+        .map((data) => data.map((map) => Message.fromMap(map: map)).toList().reversed.toList());
+  }
 
   @override
   void dispose() {
-    for (var message in _messages) {
-      message.animationController.dispose();
-    }
+    _textController.dispose();
     super.dispose();
   }
 
-  void _handleSubmitted(String text) {
+  Future<void> _submitMessage() async {
+    final text = _textController.text.trim();
+    if (text.isEmpty) {
+      return;
+    }
     _textController.clear();
-    final animationController = AnimationController(
-      duration: const Duration(milliseconds: 700),
-      vsync: this,
-    );
-    final message = ChatMessage(
-      text: text,
-      animationController: animationController,
-    );
-    setState(() {
-      _messages.insert(0, message);
-    });
-    _focusNode.requestFocus();
-    message.animationController.forward();
-  }
 
-  Widget _buildTextComposer() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8.0),
-      child: Row(
-        children: [
-          Flexible(
-            child: TextField(
-              controller: _textController,
-              onSubmitted: _handleSubmitted,
-              decoration:
-                  const InputDecoration.collapsed(hintText: 'Send a message'),
-              focusNode: _focusNode,
-            ),
-          ),
-          IconTheme(
-            data: IconThemeData(color: Theme.of(context).colorScheme.primary),
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 4.0),
-              child: IconButton(
-                icon: const Icon(Icons.send),
-                onPressed: () => _handleSubmitted(_textController.text),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    try {
+      final userId = supabase.auth.currentUser!.id;
+      await supabase.from('messages').insert({
+        'profile_id': userId,
+        'content': text,
+      });
+    } catch (error) {
+      if (mounted) {
+        context.showErrorSnackBar(message: 'Failed to send message');
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.blue,
       appBar: AppBar(
-        title: const Text('Chat App'),
-        elevation: Theme.of(context).platform == TargetPlatform.iOS ? 0.0 : 4.0,
+        title: const Text('Chat'),
+        actions: [
+          IconButton(
+            onPressed: () async {
+              await supabase.auth.signOut();
+              if (mounted) {
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil('/', (route) => false);
+              }
+            },
+            icon: const Icon(Icons.logout),
+          ),
+        ],
       ),
       body: Column(
         children: [
-          Flexible(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(8.0),
-              reverse: true,
-              itemBuilder: (_, index) => _messages[index],
-              itemCount: _messages.length,
+          Expanded(
+            child: StreamBuilder<List<Message>>(
+              stream: _messagesStream,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final messages = snapshot.data!;
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8.0, horizontal: 8.0),
+                    itemCount: messages.length,
+                    itemBuilder: (context, index) {
+                      final message = messages[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 2.0),
+                        child: ChatMessage(message: message),
+                      );
+                    },
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                return const Center(child: CircularProgressIndicator());
+              },
             ),
           ),
-          const Divider(height: 1.0),
-          Container(
-            decoration: BoxDecoration(color: Theme.of(context).cardColor),
-            child: _buildTextComposer(),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _textController,
+                      decoration: const InputDecoration(
+                        hintText: 'Send a message',
+                        border: OutlineInputBorder(),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 12.0),
+                      ),
+                      onFieldSubmitted: (_) => _submitMessage(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: _submitMessage,
+                    icon: const Icon(Icons.send),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor:
+                          Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
